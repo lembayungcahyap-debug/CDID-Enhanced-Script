@@ -32,7 +32,7 @@ local CONFIG = {
     TargetEarning    = 500000000000,  -- Uang target per sesi (0 = tidak ada batas)
 
     -- ── Discord Webhook ───────────────────────────
-    WebhookURL       = "https://discord.com/api/webhooks/1471218410070343772/uxLYmnUbS555ZnDFFjQAS9oHYL-kZvhozKkq4518kw_jZjK5j0vuxiDFIQhagQr0BEz9",
+    WebhookURL       = "",
     WebhookMinInterval = 300,   -- Min 5 menit antar pesan (detik)
     WebhookMaxInterval = 600,   -- Max 10 menit antar pesan (detik)
 
