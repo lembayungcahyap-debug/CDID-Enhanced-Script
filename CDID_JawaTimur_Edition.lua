@@ -1,125 +1,123 @@
 --[[
-╔══════════════════════════════════════════════════════════════════════════╗
-║         CDID Script — Jawa Timur Edition (Rayfield Build)              ║
-║         UI Library : Rayfield (sirius.menu/rayfield)                   ║
-║         Version    : 2.0.0-RF                                          ║
-║                                                                          ║
-║  STRUKTUR KODE                                                           ║
-║  [1] CONFIG          — Semua nilai yang bisa dikustomisasi              ║
-║  [2] SETTINGS MGR    — Load/Save config lokal                          ║
-║  [3] SERVICES        — Cache Roblox services                           ║
-║  [4] HELPERS         — Fungsi utiliti (FireEvent, Tween, Money)        ║
-║  [5] ANTI-AFK        — Cegah Idle Kick                                 ║
-║  [6] DISCORD WEBHOOK — Smart log ke Discord                            ║
-║  [7] FARMING ENGINE  — Truck Farm Jawa Timur + Side Jobs               ║
-║  [8] UNLOCK SHOPS    — Buka semua dealer/toko remote                   ║
-║  [9] UI BUILDER      — Semua elemen Rayfield                           ║
-║  [10] INIT           — Startup & background tasks                      ║
-╚══════════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════╗
+║   CDID — Jawa Timur Edition  |  Rayfield UI  |  v3.0-FINAL     ║
+║                                                                  ║
+║   STRUKTUR                                                       ║
+║   [1] CONFIG          — Semua nilai yang bisa diubah            ║
+║   [2] SETTINGS MGR    — Load/Save config lokal                  ║
+║   [3] SERVICES        — Cache Roblox services                   ║
+║   [4] HELPERS         — Utiliti (FireEvent, Tween, Money, dll)  ║
+║   [5] ANTI-AFK        — Cegah Idle Kick                         ║
+║   [6] DISCORD WEBHOOK — Smart log ke Discord                    ║
+║   [7] FARMING ENGINE  — Truck Farm + Side Jobs                  ║
+║   [8] UNLOCK SHOPS    — Buka semua Dealer/Toko                  ║
+║   [9] UI — RAYFIELD   — Semua tab & elemen UI                  ║
+║   [10] INIT           — Startup tasks                           ║
+╚══════════════════════════════════════════════════════════════════╝
 ]]
 
--- ════════════════════════════════════════════════════════
--- [1] CONFIG — Edit nilai di sini sebelum execute
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [1] CONFIG
+-- ================================================================
 
-local CONFIG = {
+local CFG = {
     -- Performa
-    CycleDelay        = 0.2,        -- Detik antar setiap aksi loop
-    TweenSpeed        = 49.5,       -- Kecepatan tween kendaraan
-    DelayBeforeRejoin = 0.5,        -- Jeda sebelum rejoin (detik)
-    CountdownSeconds  = 20,         -- Countdown sebelum teleport
+    CycleDelay        = 0.2,
+    TweenSpeed        = 49.5,
+    DelayRejoin       = 0.5,
+    CountdownSec      = 20,
 
-    -- Target Earning (0 = tidak ada batas)
+    -- Target (0 = tidak ada batas)
     TargetEarning     = 500000,
 
     -- Discord Webhook
-    WebhookURL        = "",         -- Isi URL webhook Discord kamu di sini
-    WebhookMinInterval = 300,       -- 5 menit
-    WebhookMaxInterval = 600,       -- 10 menit
+    WebhookURL        = "",      -- ← ISI URL WEBHOOK DISCORD KAMU
+    WHIntervalMin     = 300,     -- 5 menit
+    WHIntervalMax     = 600,     -- 10 menit
 
     -- Map
-    TargetMap         = "Jawa Timur",
+    MapName           = "Jawa Timur",
 
-    -- Rute Jawa Timur — tambah titik sesuai kebutuhan
-    JawaTimurRoute = {
-        { x = -50889.66, y = 1017.87, z = -86514.80, label = "Delivery Point A (Surabaya)" },
-        { x = -48200.00, y = 1020.00, z = -84000.00, label = "Checkpoint B (Malang)"       },
-        { x = -51500.00, y = 1015.00, z = -88000.00, label = "Delivery Point C (Jember)"   },
+    -- Keyword validasi waypoint Jawa Timur
+    WaypointKeywords  = {
+        "Timur", "Surabaya", "Malang", "Jember",
+        "Banyuwangi", "Pasuruan", "Kediri", "Mojokerto",
     },
 
-    -- Keyword waypoint Jawa Timur (untuk validasi)
-    WaypointKeywords  = { "Timur", "Surabaya", "Malang", "Jember", "Banyuwangi", "Pasuruan" },
+    -- Rute delivery Jawa Timur
+    -- Tambah/ubah koordinat sesuai hasil eksplorasi in-game
+    Route = {
+        { x = -50889.66, y = 1017.87, z = -86514.80, label = "Surabaya — Delivery A" },
+        { x = -48200.00, y = 1020.00, z = -84000.00, label = "Malang — Checkpoint B"  },
+        { x = -51500.00, y = 1015.00, z = -88000.00, label = "Jember — Delivery C"    },
+    },
+
+    -- Spawn area truck (near PT. Shad)
+    TruckSpawnCF = CFrame.new(-21782.94, 1042.03, -26786.96),
 
     -- UI
-    Title    = "CDID Jawa Timur",
-    Subtitle = "Auto-Farm Edition v2.0",
-    Version  = "2.0.0-RF",
+    Title   = "CDID Jawa Timur",
+    Sub     = "Auto-Farm Edition v3.0",
+    Version = "3.0-FINAL",
 }
 
--- ════════════════════════════════════════════════════════
+-- ================================================================
 -- [2] SETTINGS MANAGER
--- ════════════════════════════════════════════════════════
+-- ================================================================
 
-local SettingsManager = {
-    BaseFolder   = "CDID_JT",
-    SubFolder    = "config",
-    FileName     = "settings_v2",
-    SaveCooldown = 1,
-    LastSave     = 0,
+local SM = {
+    Base = "CDID_JT3",
+    File = "CDID_JT3\\cfg.json",
+    LastSave = 0,
+    Cooldown = 1,
 }
 
--- State global
-getgenv().S = getgenv().S or {
-    OnFarming        = false,
-    StopFarm         = false,
-    InfiniteJump     = false,
-    CountdownNotif   = false,
-    HideUI           = false,
-    TargetEarning    = CONFIG.TargetEarning,
-    WebhookURL       = CONFIG.WebhookURL,
-    DelayBeforeRejoin = CONFIG.DelayBeforeRejoin,
-    SelectedJob      = nil,
-    SpoofedName      = nil,
-    WaveText         = false,
+-- State global — persistent antar cycle
+getgenv().GS = getgenv().GS or {
+    OnFarming    = false,
+    StopFarm     = false,
+    InfJump      = false,
+    CdNotif      = false,
+    HideUI       = false,
+    TargetEarning = CFG.TargetEarning,
+    WebhookURL   = CFG.WebhookURL,
+    DelayRejoin  = CFG.DelayRejoin,
+    SelectedJob  = "Office Worker",
 }
 
-getgenv().Session = getgenv().Session or {
-    StartMoney       = 0,
-    FarmStartTime    = 0,
-    LastWebhookTime  = 0,
-    Earned           = 0,
+-- Session stats (reset tiap kali farming dimulai)
+getgenv().SS = getgenv().SS or {
+    StartMoney      = 0,
+    FarmStart       = 0,
+    LastWebhook     = 0,
 }
 
-function SettingsManager:Init()
+function SM:Init()
     self.HS = game:GetService("HttpService")
-    local base = self.BaseFolder
-    local sub  = base .. "\\" .. self.SubFolder
-    self.Path  = sub .. "\\" .. self.FileName .. ".json"
     pcall(function()
-        if not isfolder(base) then makefolder(base) end
-        if not isfolder(sub)  then makefolder(sub)  end
+        if not isfolder(self.Base) then makefolder(self.Base) end
     end)
-    if not self:Load() then pcall(function() self:Save(true) end) end
+    if not self:Load() then self:Save(true) end
 end
 
-function SettingsManager:Save(force)
+function SM:Save(force)
     if not writefile then return end
     local now = os.time()
-    if not force and (now - self.LastSave) < self.SaveCooldown then return end
+    if not force and (now - self.LastSave) < self.Cooldown then return end
     pcall(function()
-        writefile(self.Path, self.HS:JSONEncode({ v = CONFIG.Version, s = getgenv().S }))
+        writefile(self.File, self.HS:JSONEncode({ v = CFG.Version, s = getgenv().GS }))
         self.LastSave = now
     end)
 end
 
-function SettingsManager:Load()
+function SM:Load()
     if not (readfile and isfile) then return false end
     local ok = pcall(function()
-        if isfile(self.Path) then
-            local d = self.HS:JSONDecode(readfile(self.Path))
+        if isfile(self.File) then
+            local d = self.HS:JSONDecode(readfile(self.File))
             if d and d.s then
                 for k, v in pairs(d.s) do
-                    if getgenv().S[k] ~= nil then getgenv().S[k] = v end
+                    if getgenv().GS[k] ~= nil then getgenv().GS[k] = v end
                 end
             end
         end
@@ -127,76 +125,92 @@ function SettingsManager:Load()
     return ok
 end
 
-SettingsManager:Init()
+SM:Init()
 
--- ════════════════════════════════════════════════════════
--- [3] SERVICES CACHE
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [3] SERVICES
+-- ================================================================
 
-local Players          = game:GetService("Players")
-local RS               = game:GetService("ReplicatedStorage")
-local TweenService     = game:GetService("TweenService")
-local RunService       = game:GetService("RunService")
-local UIS              = game:GetService("UserInputService")
-local VIM              = game:GetService("VirtualInputService") or game:GetService("VirtualInputManager")
-local TeleportService  = game:GetService("TeleportService")
-local HttpService      = game:GetService("HttpService")
-local MarketService    = game:GetService("MarketplaceService")
-local GuiService       = game:GetService("GuiService")
+local Players    = game:GetService("Players")
+local RS         = game:GetService("ReplicatedStorage")
+local TwnSvc     = game:GetService("TweenService")
+local RunSvc     = game:GetService("RunService")
+local UIS        = game:GetService("UserInputService")
+local TelSvc     = game:GetService("TeleportService")
+local HttpSvc    = game:GetService("HttpService")
+local MktSvc     = game:GetService("MarketplaceService")
+local GuiSvc     = game:GetService("GuiService")
 
-local LP               = Players.LocalPlayer
+-- VirtualInputManager — kompatibel dengan semua executor
+local VIM = game:GetService("VirtualInputManager")
 
--- Tunggu NetworkContainer dengan timeout
-local Network, RemoteEvents, RemoteFunctions
-task.spawn(function()
-    Network        = RS:WaitForChild("NetworkContainer", 30)
-    RemoteEvents   = Network and Network:FindFirstChild("RemoteEvents")
-    RemoteFunctions = Network and Network:FindFirstChild("RemoteFunctions")
-end)
+local LP         = Players.LocalPlayer
 
--- ════════════════════════════════════════════════════════
+-- Cache network (non-blocking, dicoba setelah game load)
+local NetEvents, NetFuncs
+
+local function CacheNetwork()
+    local ok = pcall(function()
+        local nc = RS:WaitForChild("NetworkContainer", 20)
+        if nc then
+            NetEvents = nc:FindFirstChild("RemoteEvents")
+            NetFuncs  = nc:FindFirstChild("RemoteFunctions")
+        end
+    end)
+    return ok
+end
+
+-- ================================================================
 -- [4] HELPERS
--- ════════════════════════════════════════════════════════
+-- ================================================================
 
--- Safe FireServer — tidak crash kalau Remote tidak ada
-local function FireEvent(name, ...)
-    local args = { ... }
+-- Safe FireServer (tidak crash kalau Remote nil)
+local function Fire(name, ...)
+    local a = { ... }
     pcall(function()
-        if not RemoteEvents then return end
-        local ev = RemoteEvents:FindFirstChild(name)
-        if ev then ev:FireServer(table.unpack(args)) end
+        if not NetEvents then return end
+        local ev = NetEvents:FindFirstChild(name)
+        if ev then ev:FireServer(table.unpack(a)) end
     end)
 end
 
 -- Safe InvokeServer
-local function InvokeFunc(name, ...)
-    local args = { ... }
-    local ok, result = pcall(function()
-        if not RemoteFunctions then return nil end
-        local fn = RemoteFunctions:FindFirstChild(name)
-        if fn then return fn:InvokeServer(table.unpack(args)) end
+local function Invoke(name, ...)
+    local a = { ... }
+    local ok, r = pcall(function()
+        if not NetFuncs then return nil end
+        local fn = NetFuncs:FindFirstChild(name)
+        if fn then return fn:InvokeServer(table.unpack(a)) end
     end)
-    return ok and result or nil
+    return ok and r or nil
 end
 
--- Tween HumanoidRootPart ke posisi
+-- Tween karakter ke CFrame
 local function TweenChar(cf, dur)
-    dur = dur or (1 / CONFIG.TweenSpeed * 50)
+    dur = dur or (1 / CFG.TweenSpeed * 50)
     pcall(function()
         local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            TweenService:Create(hrp, TweenInfo.new(dur, Enum.EasingStyle.Linear), { CFrame = cf }):Play()
+            TwnSvc:Create(hrp, TweenInfo.new(dur, Enum.EasingStyle.Linear), { CFrame = cf }):Play()
         end
     end)
 end
 
--- Dapatkan uang dari GUI (fallback 0 kalau GUI belum ada)
+-- Set CFrame instan (tanpa tween)
+local function WarpChar(cf)
+    pcall(function()
+        local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame = cf end
+    end)
+end
+
+-- Ambil uang dari GUI (fallback 0)
 local function GetMoney()
     local ok, v = pcall(function()
-        local txt = LP.PlayerGui.Main.Container.Hub.CashFrame.Frame.TextLabel.Text
-        return tonumber(txt:gsub("[^%d]", "")) or 0
+        local t = LP.PlayerGui.Main.Container.Hub.CashFrame.Frame.TextLabel.Text
+        return tonumber(t:gsub("[^%d]", "")) or 0
     end)
-    return ok and v or 0
+    return (ok and v) or 0
 end
 
 -- Format angka: 1234567 → "1.234.567"
@@ -206,34 +220,44 @@ local function Fmt(n)
 end
 
 -- Progress bar ASCII
-local function ProgressBar(cur, tgt, w)
+local function PBar(cur, tgt, w)
     w = w or 18
-    if not tgt or tgt <= 0 then return "[ No Limit ]", 0 end
-    local p   = math.min(cur / tgt, 1)
-    local f   = math.floor(p * w)
-    local bar = string.rep("█", f) .. string.rep("░", w - f)
-    return string.format("[%s] %.1f%%", bar, p * 100), p * 100
+    if not tgt or tgt <= 0 then return "[ ∞ No Limit ]", 0 end
+    local p = math.min(cur / tgt, 1)
+    local f = math.floor(p * w)
+    return string.format("[%s%s] %.1f%%", string.rep("█", f), string.rep("░", w - f), p * 100), p * 100
 end
 
--- Validasi apakah pemain sedang di dalam kendaraan
-local function IsInVehicle()
-    local ok, result = pcall(function()
+-- Cek apakah pemain sedang di dalam kendaraan
+local function InVehicle()
+    local ok, r = pcall(function()
         local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
         return hum and hum.SeatPart ~= nil
     end)
-    return ok and result
+    return ok and r
 end
 
--- ════════════════════════════════════════════════════════
--- [5] ANTI-AFK
--- ════════════════════════════════════════════════════════
+-- Cek keyword Jawa Timur pada teks waypoint
+local function IsJTWaypoint(txt)
+    if not txt then return false end
+    for _, kw in ipairs(CFG.WaypointKeywords) do
+        if txt:find(kw) then return true end
+    end
+    return false
+end
 
-local _afkConn = nil
+-- ================================================================
+-- [5] ANTI-AFK
+-- ================================================================
+
+local _afkConn
+
 local function StartAntiAFK()
     if _afkConn then pcall(function() _afkConn:Disconnect() end) end
-    local keys = { "W", "A", "S", "D" }
+
     _afkConn = LP.Idled:Connect(function()
         pcall(function()
+            local keys = { "W", "A", "S", "D" }
             local k = keys[math.random(1, #keys)]
             VIM:SendKeyEvent(true,  k, false, game)
             task.wait(math.random() * 0.2 + 0.05)
@@ -241,41 +265,41 @@ local function StartAntiAFK()
             VIM:SendMouseMoveEvent(math.random(-30, 30), math.random(-30, 30), game)
         end)
     end)
-    LP.CharacterRemoving:Once(function()
-        if _afkConn then pcall(function() _afkConn:Disconnect() end) end
-        task.wait(3)
-        StartAntiAFK() -- Re-connect setelah respawn
+
+    -- Reconnect setelah respawn
+    LP.CharacterAdded:Once(function()
+        task.wait(1)
+        StartAntiAFK()
     end)
 end
 
--- ════════════════════════════════════════════════════════
--- [6] DISCORD WEBHOOK — Smart Reporting
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [6] DISCORD WEBHOOK
+-- ================================================================
 
 local function SendWebhook(isTargetReached)
-    local url = getgenv().S.WebhookURL or ""
+    local url = getgenv().GS.WebhookURL or ""
     if url == "" then return end
 
     -- Guard: hanya kirim saat farming aktif atau target reached
-    if not getgenv().S.OnFarming and not isTargetReached then return end
+    if not getgenv().GS.OnFarming and not isTargetReached then return end
 
     local now = os.time()
-    -- Debounce kecuali target reached
+
+    -- Debounce (kecuali alert target reached)
     if not isTargetReached then
-        local minI = CONFIG.WebhookMinInterval
-        if (now - getgenv().Session.LastWebhookTime) < minI then return end
+        local minI = CFG.WHIntervalMin
+        if (now - getgenv().SS.LastWebhook) < minI then return end
     end
-    getgenv().Session.LastWebhookTime = now
+    getgenv().SS.LastWebhook = now
 
-    local currentMoney = GetMoney()
-    local earned       = math.max(0, currentMoney - getgenv().Session.StartMoney)
-    getgenv().Session.Earned = earned
-
-    local target   = getgenv().S.TargetEarning or 0
-    local bar, pct = ProgressBar(earned, target)
-    local elapsed  = math.floor((now - getgenv().Session.FarmStartTime) / 60)
-    local status   = isTargetReached and "✅ TARGET REACHED" or "🟢 Farming Aktif"
-    local color    = isTargetReached and 5832543 or 3066993
+    local money  = GetMoney()
+    local earned = math.max(0, money - getgenv().SS.StartMoney)
+    local tgt    = getgenv().GS.TargetEarning or 0
+    local bar, _ = PBar(earned, tgt)
+    local elapsed = math.floor((now - getgenv().SS.FarmStart) / 60)
+    local status  = isTargetReached and "✅ TARGET REACHED" or "🟢 Farming Aktif"
+    local color   = isTargetReached and 5832543 or 3066993
 
     local payload = {
         embeds = {{
@@ -283,208 +307,182 @@ local function SendWebhook(isTargetReached)
                 and "✅ TARGET EARNING TERCAPAI!"
                 or  "📊 CDID Farm Report — Jawa Timur",
             color = color,
-            description = string.format(
-                isTargetReached
-                    and "**%s** (`%d`) telah mencapai target earning sesi ini!"
-                    or  "Laporan otomatis farming CDID untuk **%s** (`%d`)",
-                LP.Name, LP.UserId
-            ),
+            description = string.format("**%s** (`%d`)", LP.Name, LP.UserId),
             fields = {
-                { name = "👤 Player",         value = LP.Name,                    inline = true },
-                { name = "🆔 UserID",          value = tostring(LP.UserId),         inline = true },
-                { name = "🗺️ Map",             value = CONFIG.TargetMap,           inline = true },
-                { name = "⚡ Status",           value = status,                     inline = true },
-                { name = "⏱️ Durasi Sesi",     value = elapsed .. " menit",        inline = true },
-                { name = "💰 Uang Sekarang",   value = "Rp " .. Fmt(currentMoney), inline = true },
-                { name = "📈 Earned Sesi",     value = "Rp " .. Fmt(earned),       inline = true },
+                { name = "⚡ Status",         value = status,                    inline = true  },
+                { name = "🗺️ Map",            value = CFG.MapName,               inline = true  },
+                { name = "⏱️ Durasi Sesi",    value = elapsed .. " menit",       inline = true  },
+                { name = "💰 Uang Sekarang",  value = "Rp " .. Fmt(money),       inline = true  },
+                { name = "📈 Earned Sesi",    value = "Rp " .. Fmt(earned),      inline = true  },
                 { name = "🎯 Target",
-                  value = target > 0 and "Rp " .. Fmt(target) or "Tidak Ada",
+                  value = tgt > 0 and "Rp " .. Fmt(tgt) or "Tidak Ada",
                   inline = true },
                 { name = "📊 Progress",
                   value = "```\n" .. bar .. "\n```",
                   inline = false },
             },
             footer = {
-                text = "CDID Jawa Timur v" .. CONFIG.Version ..
-                       " | " .. os.date("%d/%m/%Y %H:%M")
+                text = "CDID v" .. CFG.Version .. " | " .. os.date("%d/%m %H:%M")
             },
         }}
     }
 
     pcall(function()
-        -- Kompatibel dengan syn.request, http.request, maupun request
-        local requestFn = (syn and syn.request)
-                       or (http and http.request)
-                       or (typeof(request) == "function" and request)
-        if not requestFn then
-            warn("[Webhook] Tidak ada fungsi HTTP request tersedia.")
-            return
-        end
-        requestFn({
+        local reqFn = (syn and syn.request)
+                   or (http and http.request)
+                   or (typeof(request) == "function" and request)
+        if not reqFn then return end
+        reqFn({
             Url     = url,
             Method  = "POST",
             Headers = { ["Content-Type"] = "application/json" },
-            Body    = HttpService:JSONEncode(payload),
+            Body    = HttpSvc:JSONEncode(payload),
         })
     end)
 end
 
--- Background webhook timer (acak 5–10 menit)
+-- Timer webhook background (cek setiap 60 detik)
 task.spawn(function()
     while task.wait(60) do
-        if getgenv().S.OnFarming then
-            local interval = math.random(CONFIG.WebhookMinInterval, CONFIG.WebhookMaxInterval)
-            if (os.time() - getgenv().Session.LastWebhookTime) >= interval then
-                SendWebhook(false)
+        if getgenv().GS.OnFarming then
+            local interval = math.random(CFG.WHIntervalMin, CFG.WHIntervalMax)
+            if (os.time() - getgenv().SS.LastWebhook) >= interval then
+                pcall(SendWebhook, false)
             end
         end
     end
 end)
 
--- ════════════════════════════════════════════════════════
+-- ================================================================
 -- [7] FARMING ENGINE
--- ════════════════════════════════════════════════════════
+-- ================================================================
 
--- Referensi ke label status UI (forward declare, diisi saat UI terbuat)
-local UIStatusLabel   = nil
-local UIMoneyLabel    = nil
+-- Forward-declare label updater (diisi dari UI)
+local _statusUpdate = function(_) end
+local _moneyUpdate  = function(_) end
 
-local function UpdateStatus(txt)
-    pcall(function()
-        if UIStatusLabel then UIStatusLabel:Set(txt) end
-    end)
+local function SetStatus(txt)
+    pcall(_statusUpdate, txt)
 end
 
--- ── 7a. Stop semua farming ───────────────────────
+-- ── 7a. Stop semua farming ────────────────────────────────────
 
-local function StopAllFarming(sendAlert)
-    getgenv().S.OnFarming = false
-    getgenv().S.StopFarm  = true
-    SettingsManager:Save()
-    -- Matikan mesin via remote (jika ada)
-    pcall(function() FireEvent("Engine", "Off") end)
-    UpdateStatus("⏹️ Farming dihentikan.")
-    if sendAlert then
-        task.spawn(function() SendWebhook(true) end)
-    end
-    print("[CDID] StopAllFarming called.")
+local function StopAll(sendAlert)
+    getgenv().GS.OnFarming = false
+    getgenv().GS.StopFarm  = true
+    SM:Save()
+    pcall(function() Fire("Engine", "Off") end)
+    SetStatus("⏹️ Farming dihentikan.")
+    if sendAlert then task.spawn(pcall, SendWebhook, true) end
 end
 
--- ── 7b. Cek target earning ────────────────────────
+-- ── 7b. Cek target earning ────────────────────────────────────
 
 local function CheckTarget()
-    local tgt = getgenv().S.TargetEarning or 0
+    local tgt = getgenv().GS.TargetEarning or 0
     if tgt <= 0 then return false end
-    local earned = GetMoney() - getgenv().Session.StartMoney
-    if earned >= tgt then
-        StopAllFarming(true)
+    if (GetMoney() - getgenv().SS.StartMoney) >= tgt then
+        StopAll(true)
         return true
     end
     return false
 end
 
--- ── 7c. Safe teleport kendaraan ──────────────────
--- Validasi pemain di kendaraan SEBELUM teleport
+-- ── 7c. Safe teleport kendaraan (dengan validasi) ─────────────
 
-local function SafeTeleportCar(car, destCF)
-    -- Validation check: pastikan pemain masih di kendaraan
-    if not IsInVehicle() then
-        warn("[SafeTeleportCar] Pemain tidak di kendaraan. Teleport dibatalkan.")
+local function TeleportCar(car, destCF)
+    -- Validasi: pemain harus di dalam kendaraan
+    if not InVehicle() then
+        warn("[TeleportCar] Pemain tidak di kendaraan — dibatalkan.")
         return false
     end
-    if not car or not car.PrimaryPart then
-        warn("[SafeTeleportCar] Kendaraan tidak valid.")
+    if not (car and car.PrimaryPart) then
+        warn("[TeleportCar] Model kendaraan tidak valid.")
         return false
     end
     pcall(function()
-        RunService:Set3dRenderingEnabled(false)
-        task.wait(0.25)
+        RunSvc:Set3dRenderingEnabled(false)
+        task.wait(0.2)
         car:PivotTo(destCF)
-        task.wait(0.25)
-        RunService:Set3dRenderingEnabled(true)
+        task.wait(0.2)
+        RunSvc:Set3dRenderingEnabled(true)
     end)
     return true
 end
 
--- ── 7d. Helper: cek keyword waypoint ─────────────
+-- ── 7d. Truck Farm — Jawa Timur ───────────────────────────────
 
-local function IsJawaTimurWaypoint(text)
-    if not text then return false end
-    for _, kw in ipairs(CONFIG.WaypointKeywords) do
-        if text:find(kw) then return true end
-    end
-    return false
-end
-
--- ── 7e. Truck Farm — Jawa Timur ───────────────────
-
-local function TruckFarmJawaTimur()
-    while task.wait(CONFIG.CycleDelay) do
-        if not getgenv().S.OnFarming then break end
+local function TruckFarm()
+    while task.wait(CFG.CycleDelay) do
+        if not getgenv().GS.OnFarming then break end
         if CheckTarget() then break end
 
-        local cycleOk, cycleErr = pcall(function()
+        local ok, err = pcall(function()
 
             -- STEP 1: Ambil job Truck
-            FireEvent("Job", "Truck")
-            UpdateStatus("📋 Mengambil job Truck...")
+            SetStatus("📋 Mengambil job Truck...")
+            Fire("Job", "Truck")
             task.wait(0.8)
 
-            -- STEP 2: Validasi waypoint tersedia
-            local wpFolder  = workspace.Etc and workspace.Etc:FindFirstChild("Waypoint")
-            local waypoint  = wpFolder and wpFolder:FindFirstChild("Waypoint")
+            -- STEP 2: Cari & validasi waypoint
+            local wpFolder = workspace.Etc and workspace.Etc:FindFirstChild("Waypoint")
+            local waypoint = wpFolder and wpFolder:FindFirstChild("Waypoint")
 
             if not waypoint then
-                for _ = 1, 12 do
+                for _ = 1, 15 do
                     task.wait(0.5)
-                    FireEvent("Job", "Truck")
+                    Fire("Job", "Truck")
                     wpFolder = workspace.Etc and workspace.Etc:FindFirstChild("Waypoint")
                     waypoint = wpFolder and wpFolder:FindFirstChild("Waypoint")
                     if waypoint then break end
                 end
             end
+
             if not waypoint then
-                warn("[TruckFarm] Waypoint tidak ditemukan. Skip cycle.")
-                UpdateStatus("⚠️ Waypoint tidak ditemukan, retry...")
+                SetStatus("⚠️ Waypoint tidak ditemukan — skip cycle.")
+                warn("[TruckFarm] Waypoint nil, skip.")
                 return
             end
 
             -- STEP 3: Pindah ke area spawn truck
-            local spawnCF = CFrame.new(-21782.94, 1042.03, -26786.96)
-            TweenChar(spawnCF, 1.0)
-            UpdateStatus("🚗 Menuju area spawn truck...")
+            SetStatus("🚗 Menuju area spawn...")
+            TweenChar(CFG.TruckSpawnCF, 1.0)
             task.wait(1.5)
 
-            -- STEP 4: Pastikan waypoint adalah tujuan Jawa Timur
-            local wBillboard = waypoint:FindFirstChildWhichIsA("BillboardGui", true)
-            local wLabel     = wBillboard and wBillboard:FindFirstChildWhichIsA("TextLabel", true)
-            local labelText  = wLabel and wLabel.Text or ""
+            -- STEP 4: Validasi waypoint adalah tujuan Jawa Timur
+            local billboard = waypoint:FindFirstChildWhichIsA("BillboardGui", true)
+            local wLabel    = billboard and billboard:FindFirstChildWhichIsA("TextLabel", true)
+            local labelText = wLabel and wLabel.Text or ""
 
             local attempt = 0
-            while not IsJawaTimurWaypoint(labelText) and getgenv().S.OnFarming do
+            while not IsJTWaypoint(labelText) and getgenv().GS.OnFarming do
                 attempt = attempt + 1
-                if attempt > 20 then
-                    warn("[TruckFarm] Waypoint Jawa Timur tidak tersedia setelah 20 percobaan.")
-                    UpdateStatus("⚠️ Waypoint JawaTimur tidak muncul, skip cycle...")
+                if attempt > 25 then
+                    SetStatus("⚠️ Waypoint JT tidak muncul — skip cycle.")
                     return
                 end
                 LP.Character.HumanoidRootPart.Anchored = true
-                FireEvent("Job", "Truck")
+                Fire("Job", "Truck")
                 pcall(fireproximityprompt, workspace.Etc.Job.Truck.Starter.Prompt)
-                LP.Character.HumanoidRootPart.Anchored = false
                 task.wait(0.8)
+                LP.Character.HumanoidRootPart.Anchored = false
                 labelText = wLabel and wLabel.Text or ""
             end
-            if not getgenv().S.OnFarming then return end
+
+            if not getgenv().GS.OnFarming then return end
 
             LP.Character.HumanoidRootPart.Anchored = false
-            UpdateStatus("✅ Waypoint Jawa Timur: " .. labelText)
+            SetStatus("✅ Waypoint: " .. labelText)
 
             -- STEP 5: Spawn kendaraan (tekan F)
-            UpdateStatus("🔑 Spawn kendaraan...")
-            VIM:SendKeyEvent(true,  "F", false, game)
-            task.wait(0.25)
-            VIM:SendKeyEvent(false, "F", false, game)
+            SetStatus("🔑 Spawn kendaraan...")
+            local function PressF()
+                VIM:SendKeyEvent(true,  "F", false, game)
+                task.wait(0.2)
+                VIM:SendKeyEvent(false, "F", false, game)
+            end
+
+            PressF()
             task.wait(4)
 
             local function FindCar()
@@ -493,99 +491,91 @@ local function TruckFarmJawaTimur()
             end
 
             local car
-            for i = 1, 15 do
+            for _ = 1, 15 do
                 car = FindCar()
                 if car then break end
-                VIM:SendKeyEvent(true,  "F", false, game)
-                task.wait(0.15)
-                VIM:SendKeyEvent(false, "F", false, game)
+                PressF()
                 task.wait(0.8)
             end
 
             if not car then
-                warn("[TruckFarm] Gagal spawn kendaraan setelah 15 percobaan.")
-                UpdateStatus("❌ Gagal spawn kendaraan, retry...")
+                SetStatus("❌ Gagal spawn kendaraan — retry cycle.")
                 return
             end
 
             -- STEP 6: Duduk di DriveSeat
-            UpdateStatus("🪑 Duduk di kendaraan...")
+            SetStatus("🪑 Duduk di kendaraan...")
             local driveSeat = car:FindFirstChild("DriveSeat")
             if not driveSeat then
-                warn("[TruckFarm] DriveSeat tidak ditemukan.")
+                warn("[TruckFarm] DriveSeat nil.")
                 return
             end
 
             pcall(function() driveSeat:Sit(LP.Character.Humanoid) end)
             task.wait(1.2)
 
-            -- Validasi sudah duduk
-            local seated = false
-            for _ = 1, 10 do
-                if IsInVehicle() then seated = true; break end
+            -- Validasi duduk dengan retry
+            for _ = 1, 12 do
+                if InVehicle() then break end
                 pcall(function() driveSeat:Sit(LP.Character.Humanoid) end)
                 task.wait(0.4)
             end
 
-            if not seated then
-                warn("[TruckFarm] Gagal duduk setelah 10 percobaan.")
-                UpdateStatus("❌ Gagal duduk, retry cycle...")
+            if not InVehicle() then
+                SetStatus("❌ Gagal duduk — retry cycle.")
                 return
             end
 
-            -- STEP 7: Countdown teleport
-            for i = CONFIG.CountdownSeconds, 0, -1 do
-                if not getgenv().S.OnFarming then return end
+            -- STEP 7: Countdown
+            for i = CFG.CountdownSec, 0, -1 do
+                if not getgenv().GS.OnFarming then return end
                 if CheckTarget() then return end
-                UpdateStatus(string.format("⏳ Teleport dalam %d detik...", i))
+                SetStatus(string.format("⏳ Teleport Jawa Timur dalam %d detik...", i))
                 task.wait(1)
             end
 
-            -- STEP 8: Teleport kendaraan ke Delivery Point Jawa Timur (random)
-            local route = CONFIG.JawaTimurRoute
-            local dest  = route[math.random(1, #route)]
+            -- STEP 8: Teleport kendaraan ke delivery point (random dari route)
+            local dest   = CFG.Route[math.random(1, #CFG.Route)]
             local destCF = CFrame.new(
                 dest.x, dest.y, dest.z,
                 0.866007268, 0, 0.500031412,
-                0, 1, 0,
+                0,           1, 0,
                 -0.500031412, 0, 0.866007268
             )
 
-            UpdateStatus("🚀 Teleport ke " .. dest.label .. "...")
-            local teleOk = SafeTeleportCar(car, destCF)
-            if not teleOk then
-                UpdateStatus("⚠️ Teleport gagal — validasi tidak lulus.")
+            SetStatus("🚀 Teleport ke " .. dest.label .. "...")
+            if not TeleportCar(car, destCF) then
+                SetStatus("⚠️ Teleport gagal validasi — retry cycle.")
                 return
             end
             task.wait(0.4)
 
-            -- STEP 9: Fire job lagi & rejoin
-            FireEvent("Job", "Truck")
-            UpdateStatus("🔄 Rejoin server...")
-            task.wait(getgenv().S.DelayBeforeRejoin or CONFIG.DelayBeforeRejoin)
+            -- STEP 9: Fire job & rejoin
+            Fire("Job", "Truck")
+            SetStatus("🔄 Rejoin...")
+            task.wait(getgenv().GS.DelayRejoin or CFG.DelayRejoin)
 
-            pcall(function()
-                TeleportService:Teleport(game.PlaceId, LP)
-            end)
-            task.wait(90) -- tunggu teleport
+            pcall(function() TelSvc:Teleport(game.PlaceId, LP) end)
+            task.wait(90)
         end)
 
-        if not cycleOk then
-            warn("[TruckFarm] Cycle error:", cycleErr)
-            UpdateStatus("⚠️ Error cycle, retry dalam 3 detik...")
+        if not ok then
+            warn("[TruckFarm] pcall error:", err)
+            SetStatus("⚠️ Error: " .. tostring(err):sub(1, 60))
             task.wait(3)
         end
     end
-    UpdateStatus("⏹️ Farming loop selesai.")
+
+    SetStatus("⏹️ Truck farm loop selesai.")
 end
 
--- ── 7f. Side Jobs ─────────────────────────────────
+-- ── 7e. Side Jobs ─────────────────────────────────────────────
 
 local function QuestOffice()
     for _ = 1, 5 do
-        if getgenv().S.StopFarm then break end
+        if getgenv().GS.StopFarm then break end
         pcall(function()
-            local gui    = LP.PlayerGui:FindFirstChild("Job")
+            local gui = LP.PlayerGui:FindFirstChild("Job")
             if not gui then return end
             local frame  = gui.Components.Container.Office.Frame
             local quest  = frame.Question.Text
@@ -597,27 +587,28 @@ local function QuestOffice()
             if not (n1 and op and n2) then return end
 
             local ans    = op == "+" and (n1 + n2) or (n1 - n2)
-            local ansStr = tostring(math.floor(ans))
-            box.Text     = ansStr
+            local str    = tostring(math.floor(ans))
+            box.Text     = str
 
-            repeat task.wait(CONFIG.CycleDelay) until box.Text == ansStr
+            repeat task.wait(CFG.CycleDelay) until box.Text == str
 
             if submit.Visible then
-                GuiService.SelectedObject = submit
+                GuiSvc.SelectedObject = submit
                 VIM:SendKeyEvent(true,  Enum.KeyCode.Return, false, game)
                 task.wait()
                 VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-                task.wait(CONFIG.CycleDelay)
-                GuiService.SelectedObject = nil
+                task.wait(CFG.CycleDelay)
+                GuiSvc.SelectedObject = nil
             end
         end)
     end
 end
 
 local function SideFarm(jobName)
-    getgenv().S.StopFarm = false
+    getgenv().GS.StopFarm = false
+
     if jobName == "Office Worker" then
-        FireEvent("Job", "Office")
+        Fire("Job", "Office")
         pcall(function()
             LP.Character.HumanoidRootPart.CFrame = CFrame.new(-38581, 1039, -62763)
         end)
@@ -626,160 +617,176 @@ local function SideFarm(jobName)
             pcall(fireproximityprompt, workspace.Etc.Job.Office.Starter.Prompt)
         end
         repeat
-            task.wait(CONFIG.CycleDelay)
+            task.wait(CFG.CycleDelay)
             QuestOffice()
-        until getgenv().S.StopFarm
+        until getgenv().GS.StopFarm
 
     elseif jobName == "Barista" then
-        FireEvent("Job", "JanjiJiwa")
+        Fire("Job", "JanjiJiwa")
         task.spawn(function()
-            while task.wait(CONFIG.CycleDelay) and not getgenv().S.StopFarm do
+            while task.wait(CFG.CycleDelay) and not getgenv().GS.StopFarm do
                 pcall(function()
                     local starter = workspace.Etc.Job.JanjiJiwa.Starter.Prompt
                     fireproximityprompt(starter)
-                    LP.Character.HumanoidRootPart.CFrame = CFrame.new(-13716.35, 1052.89, -17997.70)
+                    WarpChar(CFrame.new(-13716.35, 1052.89, -17997.70))
                     task.wait(15)
                     if LP.Backpack:FindFirstChild("Coffee") then
-                        LP.Character.HumanoidRootPart.CFrame = CFrame.new(-13723.75, 1052.89, -17994.23)
-                        FireEvent("JanjiJiwa", "Delivery")
+                        WarpChar(CFrame.new(-13723.75, 1052.89, -17994.23))
+                        Fire("JanjiJiwa", "Delivery")
                     end
-                    LP.Character.HumanoidRootPart.CFrame = CFrame.new(-13716.35, 1052.89, -17997.70)
+                    WarpChar(CFrame.new(-13716.35, 1052.89, -17997.70))
                 end)
             end
         end)
     end
 end
 
--- ════════════════════════════════════════════════════════
--- [8] UNLOCK ALL SHOPS
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [8] UNLOCK SHOPS
+-- ================================================================
 
-local function UnlockAllShops()
-    local opened = 0
-    -- Buka semua dealer via proximity prompt
+local function UnlockShops()
+    local n = 0
+    -- Via proximity prompts
     pcall(function()
         for _, d in ipairs(workspace.Etc.Dealership:GetChildren()) do
             local p = d:FindFirstChild("Prompt")
-            if p then
-                fireproximityprompt(p)
-                opened = opened + 1
-                task.wait(0.25)
-            end
+            if p then fireproximityprompt(p); n = n + 1; task.wait(0.2) end
         end
     end)
-    -- Coba via RemoteEvent
-    local remoteShops = { "KiosMarket", "Minimarket", "SpeedShop", "TuningShop", "FuelStation" }
-    for _, s in ipairs(remoteShops) do
-        pcall(FireEvent, "OpenShop", s)
+    -- Via RemoteEvent
+    for _, s in ipairs({ "KiosMarket", "Minimarket", "SpeedShop", "TuningShop", "FuelStation" }) do
+        pcall(Fire, "OpenShop", s)
         task.wait(0.15)
     end
-    return opened
+    return n
 end
 
--- ════════════════════════════════════════════════════════
--- [9] UI BUILDER — Rayfield Library
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [9] UI — RAYFIELD
+-- ================================================================
 
--- Tunggu game loaded
-repeat task.wait(0.1) until game:IsLoaded() and LP and LP.Character
+-- Tunggu game & karakter benar-benar loaded
+repeat task.wait(0.1)
+until game:IsLoaded()
+   and LP
+   and LP.Character
+   and LP.Character:FindFirstChild("HumanoidRootPart")
 
--- Load Rayfield (dengan fallback URL)
+-- ── Load Rayfield ─────────────────────────────────────────────
+
 local Rayfield
-local ok_rf, err_rf = pcall(function()
-    Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-end)
 
-if not ok_rf or not Rayfield then
-    -- Fallback URL
-    pcall(function()
-        Rayfield = loadstring(game:HttpGet(
-            "https://raw.githubusercontent.com/shlexware/Rayfield/main/source"
-        ))()
+-- Coba URL utama dulu, fallback ke GitHub raw
+local RF_URLS = {
+    "https://sirius.menu/rayfield",
+    "https://raw.githubusercontent.com/shlexware/Rayfield/main/source",
+}
+
+for _, url in ipairs(RF_URLS) do
+    local ok, lib = pcall(function()
+        return loadstring(game:HttpGet(url, true))()
     end)
+    if ok and lib then
+        Rayfield = lib
+        break
+    end
+    warn("[CDID] Rayfield URL gagal:", url)
+    task.wait(1)
 end
 
 if not Rayfield then
-    error("[CDID] FATAL: Gagal memuat Rayfield UI Library!\n" .. tostring(err_rf))
+    -- Fallback terakhir: tampilkan pesan error via ScreenGui sederhana
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "CDIDError"; sg.ResetOnSpawn = false
+    sg.Parent = LP.PlayerGui
+    local frame = Instance.new("Frame", sg)
+    frame.Size = UDim2.fromOffset(400, 80)
+    frame.Position = UDim2.fromScale(0.5, 0.1)
+    frame.AnchorPoint = Vector2.new(0.5, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    local lbl = Instance.new("TextLabel", frame)
+    lbl.Size = UDim2.fromScale(1, 1)
+    lbl.Text = "❌ CDID: Gagal load Rayfield!\nCek koneksi internet & HTTP Request."
+    lbl.TextColor3 = Color3.new(1, 1, 1)
+    lbl.BackgroundTransparency = 1
+    lbl.TextScaled = true
+    error("[CDID] FATAL: Rayfield tidak dapat dimuat dari semua URL.")
 end
 
--- Buat Window utama
+-- Cache network setelah Rayfield berhasil dimuat
+CacheNetwork()
+
+-- ── Buat Window ───────────────────────────────────────────────
+
 local Window = Rayfield:CreateWindow({
-    Name             = CONFIG.Title,
-    LoadingTitle     = CONFIG.Title,
-    LoadingSubtitle  = CONFIG.Subtitle,
-    ConfigurationSaving = {
-        Enabled  = true,
-        FileName = "CDID_JT_Config",
-    },
-    Discord = {
-        Enabled = false,
-    },
-    KeySystem = false,
+    Name            = CFG.Title,
+    LoadingTitle    = CFG.Title,
+    LoadingSubtitle = CFG.Sub,
+    ConfigurationSaving = { Enabled = true, FileName = "CDID_JT3" },
+    Discord         = { Enabled = false },
+    KeySystem       = false,
 })
 
--- Helper Notify
-local function Notify(title, msg, dur, icon)
+-- Helper notifikasi
+local function Notif(title, msg, dur, img)
     pcall(function()
         Rayfield:Notify({
-            Title       = title or CONFIG.Title,
-            Content     = msg   or "",
-            Duration    = dur   or 5,
-            Image       = icon  or "info",
+            Title    = title or CFG.Title,
+            Content  = msg   or "",
+            Duration = dur   or 5,
+            Image    = img   or "info",
         })
     end)
 end
 
--- ╔══════════════════════════════╗
--- ║  TAB 1: HOME                ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 1 — HOME                       ║
+-- ╚══════════════════════════════════════╝
 
 local HomeTab = Window:CreateTab("🏠 Home", "home")
 
--- Section: Player Info
-local secInfo = HomeTab:CreateSection("Player Info")
-
-HomeTab:CreateLabel("👤 Player: " .. LP.Name .. " | 🆔 " .. LP.UserId)
-HomeTab:CreateLabel("🗺️ Map Target: " .. CONFIG.TargetMap)
-HomeTab:CreateLabel("📦 Script v" .. CONFIG.Version)
+HomeTab:CreateSection("Info Pemain")
+HomeTab:CreateLabel("👤 " .. LP.Name .. "  |  🆔 " .. tostring(LP.UserId))
+HomeTab:CreateLabel("🗺️ Map: " .. CFG.MapName .. "  |  📦 v" .. CFG.Version)
 
 HomeTab:CreateDivider()
 HomeTab:CreateSection("Karakter")
 
 HomeTab:CreateSlider({
-    Name    = "Walkspeed",
-    Range   = { 2, 250 },
-    Increment = 1,
-    Suffix  = " stud/s",
+    Name         = "Walk Speed",
+    Range        = { 2, 250 },
+    Increment    = 1,
+    Suffix       = " stud/s",
     CurrentValue = 16,
-    Flag    = "WalkSpeed",
+    Flag         = "WalkSpeed",
     Callback = function(v)
         pcall(function() LP.Character.Humanoid.WalkSpeed = v end)
     end,
 })
 
 HomeTab:CreateSlider({
-    Name    = "Jump Power",
-    Range   = { 2, 200 },
-    Increment = 1,
-    Suffix  = "",
+    Name         = "Jump Power",
+    Range        = { 2, 200 },
+    Increment    = 1,
     CurrentValue = 50,
-    Flag    = "JumpPower",
+    Flag         = "JumpPower",
     Callback = function(v)
         pcall(function() LP.Character.Humanoid.JumpHeight = v end)
     end,
 })
 
 HomeTab:CreateToggle({
-    Name    = "Infinite Jump",
+    Name         = "Infinite Jump",
     CurrentValue = false,
-    Flag    = "InfJump",
+    Flag         = "InfJump",
     Callback = function(v)
-        getgenv().S.InfiniteJump = v
+        getgenv().GS.InfJump = v
     end,
 })
 
 UIS.JumpRequest:Connect(function()
-    if getgenv().S.InfiniteJump then
+    if getgenv().GS.InfJump then
         pcall(function()
             LP.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
         end)
@@ -787,11 +794,11 @@ UIS.JumpRequest:Connect(function()
 end)
 
 HomeTab:CreateToggle({
-    Name    = "No Clip",
+    Name         = "No Clip",
     CurrentValue = false,
-    Flag    = "NoClip",
+    Flag         = "NoClip",
     Callback = function(v)
-        RunService.Stepped:Connect(function()
+        RunSvc.Stepped:Connect(function()
             if v and LP.Character then
                 for _, p in pairs(LP.Character:GetDescendants()) do
                     if p:IsA("BasePart") then p.CanCollide = false end
@@ -802,66 +809,61 @@ HomeTab:CreateToggle({
 })
 
 HomeTab:CreateToggle({
-    Name    = "Click Teleport (CTRL + Klik)",
+    Name         = "Click TP  (CTRL + Klik Kiri)",
     CurrentValue = false,
-    Flag    = "ClickTP",
+    Flag         = "ClickTP",
     Callback = function(v)
         UIS.InputBegan:Connect(function(inp)
-            if v and UIS:IsKeyDown(Enum.KeyCode.LeftControl)
-                and inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            if not v then return end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftControl)
+               and inp.UserInputType == Enum.UserInputType.MouseButton1 then
                 pcall(function()
-                    LP.Character.HumanoidRootPart.CFrame = CFrame.new(
-                        LP:GetMouse().Hit.Position + Vector3.new(0, 5, 0)
-                    )
+                    LP.Character.HumanoidRootPart.CFrame =
+                        CFrame.new(LP:GetMouse().Hit.Position + Vector3.new(0, 5, 0))
                 end)
             end
         end)
     end,
 })
 
--- ╔══════════════════════════════╗
--- ║  TAB 2: FARMING             ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 2 — FARMING                    ║
+-- ╚══════════════════════════════════════╝
 
 local FarmTab = Window:CreateTab("🚛 Farming", "truck")
 
--- Status display (gunakan CreateLabel dan update teks via variable)
 FarmTab:CreateSection("📊 Status Real-Time")
 
--- Rayfield tidak punya built-in Update untuk Label,
--- jadi kita gunakan wrapper sederhana.
-local _statusText = "Belum dimulai."
-local _moneyText  = "Rp 0"
-
-local statusParagraph = FarmTab:CreateParagraph({
-    Title   = "Status Farming",
-    Content = _statusText,
+-- Paragraph dinamis — diupdate via _statusUpdate / _moneyUpdate
+local statusPara = FarmTab:CreateParagraph({
+    Title   = "Status",
+    Content = "Belum dimulai.",
 })
-local moneyParagraph = FarmTab:CreateParagraph({
+
+local moneyPara = FarmTab:CreateParagraph({
     Title   = "Uang & Progress",
-    Content = _moneyText,
+    Content = "Rp 0",
 })
 
--- Assign ke UIStatusLabel supaya UpdateStatus() bisa memperbarui
-UIStatusLabel = {
-    Set = function(_, txt)
-        pcall(function() statusParagraph:Set({ Title = "Status Farming", Content = txt }) end)
-    end
-}
+-- Assign updater functions
+_statusUpdate = function(txt)
+    pcall(function()
+        statusPara:Set({ Title = "Status", Content = txt })
+    end)
+end
 
 -- Update money setiap 2 detik
 task.spawn(function()
     while task.wait(2) do
         pcall(function()
             local money  = GetMoney()
-            local earned = math.max(0, money - getgenv().Session.StartMoney)
-            local bar, _ = ProgressBar(earned, getgenv().S.TargetEarning)
-            moneyParagraph:Set({
+            local earned = math.max(0, money - getgenv().SS.StartMoney)
+            local bar, _ = PBar(earned, getgenv().GS.TargetEarning)
+            moneyPara:Set({
                 Title   = "Uang & Progress",
-                Content = string.format(
-                    "💰 Rp %s\n📈 Earned: Rp %s\n%s",
-                    Fmt(money), Fmt(earned), bar
-                ),
+                Content = "💰 Rp " .. Fmt(money) ..
+                          "\n📈 Earned: Rp " .. Fmt(earned) ..
+                          "\n" .. bar,
             })
         end)
     end
@@ -871,296 +873,289 @@ FarmTab:CreateDivider()
 FarmTab:CreateSection("⚙️ Konfigurasi")
 
 FarmTab:CreateInput({
-    Name        = "🎯 Target Earning (Rp)",
-    PlaceholderText = tostring(getgenv().S.TargetEarning),
+    Name            = "🎯 Target Earning  (Rp, 0 = tidak ada batas)",
+    PlaceholderText = tostring(getgenv().GS.TargetEarning),
     RemoveTextAfterFocusLost = false,
-    Flag        = "TargetEarning",
-    Callback    = function(v)
+    Flag            = "TargetInput",
+    Callback = function(v)
         local n = tonumber(v)
         if n then
-            getgenv().S.TargetEarning = n
-            SettingsManager:Save()
-            Notify("Target", "Target diubah ke Rp " .. Fmt(n), 4, "check")
+            getgenv().GS.TargetEarning = n
+            SM:Save()
+            Notif("Target", "Target: Rp " .. Fmt(n), 4, "check")
         end
     end,
 })
 
 FarmTab:CreateInput({
-    Name        = "⏱️ Delay Sebelum Rejoin (detik)",
-    PlaceholderText = tostring(getgenv().S.DelayBeforeRejoin),
+    Name            = "⏱️ Delay Rejoin  (detik)",
+    PlaceholderText = tostring(getgenv().GS.DelayRejoin),
     RemoveTextAfterFocusLost = false,
-    Flag        = "DelayRejoin",
-    Callback    = function(v)
+    Flag            = "DelayInput",
+    Callback = function(v)
         local n = tonumber(v)
-        if n then
-            getgenv().S.DelayBeforeRejoin = n
-            SettingsManager:Save()
-        end
+        if n then getgenv().GS.DelayRejoin = n; SM:Save() end
     end,
 })
 
 FarmTab:CreateToggle({
     Name         = "🔔 Countdown Notification",
-    CurrentValue = getgenv().S.CountdownNotif,
+    CurrentValue = getgenv().GS.CdNotif,
     Flag         = "CdNotif",
-    Callback     = function(v)
-        getgenv().S.CountdownNotif = v
-        SettingsManager:Save()
-    end,
-})
-
-FarmTab:CreateToggle({
-    Name         = "🙈 Sembunyikan UI Saat Farming",
-    CurrentValue = false,
-    Flag         = "HideUI",
-    Callback     = function(v)
-        getgenv().S.HideUI = v
-        -- Rayfield minimize
-        if v then
-            pcall(function() Rayfield:Destroy() end)
-        end
+    Callback = function(v)
+        getgenv().GS.CdNotif = v; SM:Save()
     end,
 })
 
 FarmTab:CreateDivider()
 FarmTab:CreateSection("🚛 Auto-Farm Jawa Timur")
 
+FarmTab:CreateParagraph({
+    Title   = "ℹ️ Info Parameter",
+    Content = "Cycle Delay : " .. CFG.CycleDelay .. " detik\n" ..
+              "Tween Speed : " .. CFG.TweenSpeed .. "\n" ..
+              "Countdown   : " .. CFG.CountdownSec .. " detik\n" ..
+              "Route JT    : " .. #CFG.Route .. " titik delivery",
+})
+
 FarmTab:CreateToggle({
-    Name         = "▶️ Mulai Truck Farm (Jawa Timur)",
+    Name         = "▶️  Mulai Truck Farm  (Jawa Timur)",
     CurrentValue = false,
-    Flag         = "TruckFarm",
-    Callback     = function(v)
-        getgenv().S.OnFarming = v
-        getgenv().S.StopFarm  = not v
-        SettingsManager:Save()
+    Flag         = "TruckFarmToggle",
+    Callback = function(v)
+        getgenv().GS.OnFarming = v
+        getgenv().GS.StopFarm  = not v
+        SM:Save()
 
         if v then
-            getgenv().Session.StartMoney      = GetMoney()
-            getgenv().Session.FarmStartTime   = os.time()
-            getgenv().Session.LastWebhookTime = 0
-            Notify("Farming", "Auto-Farm Jawa Timur dimulai!\nTarget: Rp " .. Fmt(getgenv().S.TargetEarning), 5, "play")
-            task.spawn(TruckFarmJawaTimur)
+            getgenv().SS.StartMoney  = GetMoney()
+            getgenv().SS.FarmStart   = os.time()
+            getgenv().SS.LastWebhook = 0
+            Notif("Farming", "▶️ Auto-Farm Jawa Timur dimulai!\nTarget: Rp " ..
+                  Fmt(getgenv().GS.TargetEarning), 5, "play")
+            task.spawn(TruckFarm)
         else
-            StopAllFarming(false)
-            Notify("Farming", "Auto-Farm dihentikan.", 4, "stop")
+            StopAll(false)
+            Notif("Farming", "⏹️ Auto-Farm dihentikan.", 4, "stop")
         end
     end,
 })
 
--- ╔══════════════════════════════╗
--- ║  TAB 3: SIDE JOBS           ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 3 — SIDE JOBS                  ║
+-- ╚══════════════════════════════════════╝
 
 local JobTab = Window:CreateTab("💼 Side Jobs", "briefcase")
 
 JobTab:CreateSection("Pilih Pekerjaan")
 
-local selectedJob = "Office Worker"
+local _selectedJob = getgenv().GS.SelectedJob or "Office Worker"
+
 JobTab:CreateDropdown({
-    Name    = "Pilih Job",
-    Options = { "Office Worker", "Barista" },
-    CurrentOption = { "Office Worker" },
-    Flag    = "SelJob",
+    Name          = "Job",
+    Options       = { "Office Worker", "Barista" },
+    CurrentOption = { _selectedJob },
+    Flag          = "JobDropdown",
     Callback = function(opt)
-        selectedJob = opt
-        getgenv().S.SelectedJob = opt
-        Notify("Job", "Job dipilih: " .. opt, 3, "info")
+        _selectedJob = opt
+        getgenv().GS.SelectedJob = opt
+        SM:Save()
+        Notif("Job", "Dipilih: " .. opt, 3, "info")
     end,
 })
 
 JobTab:CreateToggle({
-    Name         = "▶️ Mulai Side Job Farm",
+    Name         = "▶️  Mulai Side Job",
     CurrentValue = false,
     Flag         = "SideJobToggle",
-    Callback     = function(v)
+    Callback = function(v)
         if v then
-            if not selectedJob then
-                Notify("Error", "Pilih job terlebih dahulu!", 4, "alert")
-                return
-            end
-            getgenv().S.StopFarm = false
-            task.spawn(function() SideFarm(selectedJob) end)
-            Notify("Side Job", "Memulai " .. selectedJob, 4, "play")
+            getgenv().GS.StopFarm = false
+            task.spawn(function() SideFarm(_selectedJob) end)
+            Notif("Side Job", "Mulai: " .. _selectedJob, 4, "play")
         else
-            getgenv().S.StopFarm = true
-            SettingsManager:Save()
-            Notify("Side Job", "Side job dihentikan.", 4, "stop")
+            getgenv().GS.StopFarm = true
+            SM:Save()
+            Notif("Side Job", "Dihentikan.", 4, "stop")
         end
     end,
 })
 
--- ╔══════════════════════════════╗
--- ║  TAB 4: MAIN TOOLS          ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 4 — TOOLS                      ║
+-- ╚══════════════════════════════════════╝
 
-local MainTab = Window:CreateTab("🔧 Tools", "wrench")
+local ToolTab = Window:CreateTab("🔧 Tools", "wrench")
 
 -- Vehicle Sniper
-MainTab:CreateSection("🎯 Vehicle Sniper")
+ToolTab:CreateSection("🎯 Vehicle Sniper")
 
 local limitedStock = RS:FindFirstChild("LimitedStock")
-local vNames = {}
+local vList = {}
 if limitedStock then
     for _, c in ipairs(limitedStock:GetChildren()) do
-        table.insert(vNames, c.Name)
+        table.insert(vList, c.Name)
     end
 end
-if #vNames == 0 then vNames = { "(tidak ada limited stock)" } end
+if #vList == 0 then vList = { "Tidak ada limited stock" } end
 
-local selectedVehicle = vNames[1]
-MainTab:CreateDropdown({
-    Name    = "Pilih Kendaraan",
-    Options = vNames,
-    CurrentOption = { vNames[1] },
-    Flag    = "SelVehicle",
-    Callback = function(opt) selectedVehicle = opt end,
+local _selVehicle = vList[1]
+ToolTab:CreateDropdown({
+    Name          = "Kendaraan",
+    Options       = vList,
+    CurrentOption = { vList[1] },
+    Flag          = "VehicleDD",
+    Callback = function(opt) _selVehicle = opt end,
 })
 
-MainTab:CreateButton({
+ToolTab:CreateButton({
     Name     = "🛒 Beli Kendaraan Dipilih",
     Callback = function()
-        if selectedVehicle then
-            InvokeFunc("Dealership", "Buy", selectedVehicle)
-            Notify("Vehicle", "Mencoba beli: " .. selectedVehicle, 4, "cart")
-        end
+        Invoke("Dealership", "Buy", _selVehicle)
+        Notif("Sniper", "Membeli: " .. _selVehicle, 4, "cart")
     end,
 })
 
-MainTab:CreateButton({
+ToolTab:CreateButton({
     Name     = "🛒 Beli SEMUA Kendaraan",
     Callback = function()
         if limitedStock then
             for _, c in ipairs(limitedStock:GetChildren()) do
-                InvokeFunc("Dealership", "Buy", c.Name)
+                Invoke("Dealership", "Buy", c.Name)
                 task.wait(0.3)
             end
-            Notify("Vehicle", "Semua kendaraan dibeli!", 4, "check")
+            Notif("Sniper", "Semua kendaraan dibeli!", 4, "check")
         end
     end,
 })
 
--- Dealer & Shops
-MainTab:CreateSection("🏪 Dealer & Toko")
+-- Dealer & Toko
+ToolTab:CreateSection("🏪 Dealer & Toko")
 
-local dealerNames   = {}
-local dealerPrompts = {}
+local dNames, dPrompts = {}, {}
 pcall(function()
     for _, d in ipairs(workspace.Etc.Dealership:GetChildren()) do
-        table.insert(dealerNames, d.Name)
-        dealerPrompts[d.Name] = d:FindFirstChild("Prompt")
+        table.insert(dNames, d.Name)
+        dPrompts[d.Name] = d:FindFirstChild("Prompt")
     end
 end)
-if #dealerNames == 0 then dealerNames = { "(tidak ada dealer)" } end
+if #dNames == 0 then dNames = { "Tidak ada dealer" } end
 
-local selectedDealer = dealerNames[1]
-MainTab:CreateDropdown({
-    Name    = "Pilih Dealer",
-    Options = dealerNames,
-    CurrentOption = { dealerNames[1] },
-    Flag    = "SelDealer",
-    Callback = function(opt) selectedDealer = opt end,
+local _selDealer = dNames[1]
+ToolTab:CreateDropdown({
+    Name          = "Dealer",
+    Options       = dNames,
+    CurrentOption = { dNames[1] },
+    Flag          = "DealerDD",
+    Callback = function(opt) _selDealer = opt end,
 })
 
-MainTab:CreateButton({
+ToolTab:CreateButton({
     Name     = "🚪 Buka GUI Dealer",
     Callback = function()
-        if selectedDealer then
-            local p = dealerPrompts[selectedDealer]
-            if p then
-                pcall(fireproximityprompt, p)
-                Notify("Dealer", "Membuka " .. selectedDealer, 3, "store")
-            else
-                Notify("Dealer", "Prompt tidak ditemukan.", 4, "alert")
-            end
+        local p = dPrompts[_selDealer]
+        if p then
+            pcall(fireproximityprompt, p)
+            Notif("Dealer", "Membuka: " .. _selDealer, 3, "store")
+        else
+            Notif("Dealer", "Prompt tidak ditemukan.", 4, "alert")
         end
     end,
 })
 
-MainTab:CreateButton({
-    Name     = "🔓 Unlock Semua Toko",
+ToolTab:CreateButton({
+    Name     = "🔓 Unlock SEMUA Toko",
     Callback = function()
-        local count = UnlockAllShops()
-        Notify("Shops", "Dibuka: " .. count .. " dealer/toko!", 5, "check")
+        local n = UnlockShops()
+        Notif("Shops", n .. " toko/dealer dibuka!", 5, "check")
     end,
 })
 
--- Box Misc
-MainTab:CreateSection("📦 Box")
-
-MainTab:CreateButton({ Name = "Claim Box",    Callback = function() FireEvent("Box", "Claim")                   end })
-MainTab:CreateButton({ Name = "Gamepass Box", Callback = function() FireEvent("Box", "Buy", "Gamepass Box")     end })
-MainTab:CreateButton({ Name = "Limited Box",  Callback = function() FireEvent("Box", "Buy", "Limited Box")      end })
+-- Box
+ToolTab:CreateSection("📦 Box")
+ToolTab:CreateButton({ Name = "Claim Box",    Callback = function() Fire("Box","Claim") end })
+ToolTab:CreateButton({ Name = "Gamepass Box", Callback = function() Fire("Box","Buy","Gamepass Box") end })
+ToolTab:CreateButton({ Name = "Limited Box",  Callback = function() Fire("Box","Buy","Limited Box") end })
 
 -- Car Slot
-MainTab:CreateSection("🚗 Car Slot")
-MainTab:CreateButton({
+ToolTab:CreateSection("🚗 Car Slot")
+ToolTab:CreateButton({
     Name     = "⬆️ Upgrade Slot",
-    Callback = function() FireEvent("UpgradeStats", "CarSlot") end,
+    Callback = function() Fire("UpgradeStats", "CarSlot") end,
 })
 
--- ╔══════════════════════════════╗
--- ║  TAB 5: DISCORD WEBHOOK     ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 5 — WEBHOOK                    ║
+-- ╚══════════════════════════════════════╝
 
-local WebhookTab = Window:CreateTab("📡 Webhook", "bell")
+local WHTab = Window:CreateTab("📡 Webhook", "bell")
 
-WebhookTab:CreateSection("🔔 Discord Webhook Config")
+WHTab:CreateSection("🔔 Discord Config")
 
-WebhookTab:CreateParagraph({
-    Title   = "Cara Pakai",
-    Content = "1. Buat Webhook di server Discord kamu\n2. Copy URL webhook\n3. Paste di input di bawah\n4. Klik Save\n5. Log dikirim otomatis setiap 5-10 menit saat farming aktif",
+WHTab:CreateParagraph({
+    Title   = "Cara Setup",
+    Content = "1. Buka Server Discord → Edit Channel → Integrations → Webhooks\n" ..
+              "2. Buat webhook baru → Copy URL\n" ..
+              "3. Paste di input di bawah → tekan Enter\n" ..
+              "4. Log otomatis dikirim setiap 5–10 menit saat farming aktif",
 })
 
-WebhookTab:CreateInput({
-    Name        = "Webhook URL",
+WHTab:CreateInput({
+    Name            = "Webhook URL",
     PlaceholderText = "https://discord.com/api/webhooks/...",
     RemoveTextAfterFocusLost = false,
-    Flag        = "WebhookURL",
-    Callback    = function(v)
-        getgenv().S.WebhookURL = v
-        SettingsManager:Save()
-        Notify("Webhook", "URL disimpan!", 4, "check")
+    Flag            = "WebhookInput",
+    Callback = function(v)
+        getgenv().GS.WebhookURL = v
+        SM:Save()
+        Notif("Webhook", "✅ URL disimpan!", 4, "check")
     end,
 })
 
-WebhookTab:CreateButton({
+WHTab:CreateButton({
     Name     = "📤 Test Kirim Webhook",
     Callback = function()
-        local backup = getgenv().S.OnFarming
-        getgenv().S.OnFarming              = true
-        getgenv().Session.StartMoney        = GetMoney() - 99999
-        getgenv().Session.FarmStartTime     = os.time() - 300
-        getgenv().Session.LastWebhookTime   = 0
-        SendWebhook(false)
-        getgenv().S.OnFarming = backup
-        Notify("Webhook", "Test dikirim! Cek Discord kamu.", 5, "bell")
+        local bk = getgenv().GS.OnFarming
+        getgenv().GS.OnFarming  = true
+        getgenv().SS.StartMoney = GetMoney() - 88888
+        getgenv().SS.FarmStart  = os.time() - 300
+        getgenv().SS.LastWebhook = 0
+        pcall(SendWebhook, false)
+        getgenv().GS.OnFarming = bk
+        Notif("Webhook", "Test dikirim — cek Discord!", 5, "bell")
     end,
 })
 
-WebhookTab:CreateButton({
+WHTab:CreateButton({
     Name     = "✅ Test Alert Target Reached",
     Callback = function()
-        getgenv().Session.LastWebhookTime = 0
-        SendWebhook(true)
-        Notify("Webhook", "Alert TARGET REACHED dikirim!", 5, "check")
+        getgenv().SS.LastWebhook = 0
+        pcall(SendWebhook, true)
+        Notif("Webhook", "Alert TARGET REACHED dikirim!", 5, "check")
     end,
 })
 
-WebhookTab:CreateSection("📋 Info Embed")
-WebhookTab:CreateParagraph({
-    Title   = "Data yang Dikirim",
-    Content = "✅ Username & UserID\n✅ Status Farming (Aktif / Target Reached)\n✅ Uang Saat Ini\n✅ Earned Sesi Ini\n✅ Progress Bar % ke Target\n✅ Durasi Sesi (menit)\n✅ Timestamp",
+WHTab:CreateSection("📋 Data Embed")
+WHTab:CreateParagraph({
+    Title   = "Isi Log Discord",
+    Content = "✅ Username & UserID\n" ..
+              "✅ Status (Aktif / Target Reached)\n" ..
+              "✅ Uang Saat Ini\n" ..
+              "✅ Earned Sesi Ini\n" ..
+              "✅ Progress Bar % ke Target\n" ..
+              "✅ Durasi Sesi (menit)\n" ..
+              "✅ Timestamp",
 })
-WebhookTab:CreateParagraph({
-    Title   = "Interval",
-    Content = "Min: " .. CONFIG.WebhookMinInterval/60 .. " menit\n" ..
-              "Max: " .. CONFIG.WebhookMaxInterval/60 .. " menit\n" ..
-              "(Acak, anti-spam aktif)",
+WHTab:CreateParagraph({
+    Title   = "Interval Anti-Spam",
+    Content = "Min: " .. CFG.WHIntervalMin/60 .. " menit\n" ..
+              "Max: " .. CFG.WHIntervalMax/60 .. " menit\n" ..
+              "(Acak setiap siklus — debounce aktif)",
 })
 
--- ╔══════════════════════════════╗
--- ║  TAB 6: SETTINGS            ║
--- ╚══════════════════════════════╝
+-- ╔══════════════════════════════════════╗
+-- ║  TAB 6 — SETTINGS                   ║
+-- ╚══════════════════════════════════════╝
 
 local SettTab = Window:CreateTab("⚙️ Settings", "settings")
 
@@ -1169,21 +1164,21 @@ SettTab:CreateSection("🔐 Private Server")
 SettTab:CreateButton({
     Name     = "📋 Buat Private Code",
     Callback = function()
-        FireEvent("PrivateServer", "Create")
-        Notify("PS", "Membuat private code...", 4, "info")
+        Fire("PrivateServer", "Create")
+        Notif("PS", "Membuat private code...", 4, "info")
     end,
 })
 
 SettTab:CreateButton({
-    Name     = "🔗 Join PS (Jawa Timur)",
+    Name     = "🔗 Join Private Server (Jawa Timur)",
     Callback = function()
         pcall(function()
             local lbl = LP.PlayerGui.Hub.Container.Window.PrivateServer.ServerLabel
             if lbl and lbl.ContentText ~= "None" then
-                FireEvent("PrivateServer", "Join", lbl.ContentText, "JawaTimur")
-                Notify("PS", "Joining: " .. lbl.ContentText, 5, "link")
+                Fire("PrivateServer", "Join", lbl.ContentText, "JawaTimur")
+                Notif("PS", "Joining: " .. lbl.ContentText, 5, "link")
             else
-                Notify("PS", "Private code tidak ditemukan. Buat dulu!", 5, "alert")
+                Notif("PS", "Buat private code dulu!", 5, "alert")
             end
         end)
     end,
@@ -1211,48 +1206,52 @@ SettTab:CreateButton({
     end,
 })
 
-SettTab:CreateSection("ℹ️ Info")
+SettTab:CreateSection("ℹ️ Tentang Script")
 SettTab:CreateParagraph({
-    Title   = "Tentang Script",
-    Content = "CDID Jawa Timur Edition\nVersi: " .. CONFIG.Version ..
-              "\nUI Library: Rayfield\nCycle Delay: " .. CONFIG.CycleDelay .. "s" ..
-              "\nTween Speed: " .. CONFIG.TweenSpeed,
+    Title   = "Info",
+    Content = "Versi     : " .. CFG.Version .. "\n" ..
+              "UI Lib    : Rayfield (sirius.menu)\n" ..
+              "CycleDelay: " .. CFG.CycleDelay .. " detik\n" ..
+              "TwnSpeed  : " .. CFG.TweenSpeed .. "\n" ..
+              "Route JT  : " .. #CFG.Route .. " titik\n" ..
+              "AntiAFK   : Aktif (VirtualInputManager)",
 })
 
--- ════════════════════════════════════════════════════════
--- [10] INIT — Startup
--- ════════════════════════════════════════════════════════
+-- ================================================================
+-- [10] INIT
+-- ================================================================
 
--- Anti-AFK aktif
+-- Anti-AFK aktif dari awal
 StartAntiAFK()
 
--- Cek map
+-- Cek apakah benar-benar di map Jawa Timur
 task.spawn(function()
     local ok, info = pcall(function()
-        return MarketService:GetProductInfo(game.PlaceId)
+        return MktSvc:GetProductInfo(game.PlaceId)
     end)
     if ok and info then
         local name = info.Name or ""
-        if name:find("Timur") or name:find("Car Driving") then
-            Notify("✅ Map OK", "Terdeteksi: " .. name, 5, "check")
+        if name:find("Timur") or name:find("Car Driving") or name:find("CDID") then
+            Notif("✅ Map OK", "Terdeteksi: " .. name, 5, "check")
         else
-            getgenv().S.OnFarming = false
-            Notify("⚠️ Warning", "Kamu tidak di Jawa Timur!\nAuto-Farm dinonaktifkan.", 6, "alert")
+            getgenv().GS.OnFarming = false
+            Notif("⚠️ Bukan Jawa Timur!", "Auto-Farm dinonaktifkan.\nAktifkan manual jika diperlukan.", 7, "alert")
         end
     end
 end)
 
--- Auto-resume jika config menyimpan OnFarming = true
+-- Auto-resume farming dari config tersimpan
 task.spawn(function()
     task.wait(3)
-    if getgenv().S.OnFarming then
-        getgenv().Session.StartMoney      = GetMoney()
-        getgenv().Session.FarmStartTime   = os.time()
-        getgenv().Session.LastWebhookTime = 0
-        Notify("Auto-Resume", "Config ditemukan — melanjutkan farming!", 5, "play")
-        UpdateStatus("♻️ Auto-resume dari config...")
-        task.spawn(TruckFarmJawaTimur)
+    if getgenv().GS.OnFarming then
+        getgenv().SS.StartMoney  = GetMoney()
+        getgenv().SS.FarmStart   = os.time()
+        getgenv().SS.LastWebhook = 0
+        Notif("Auto-Resume", "Config ditemukan — farming dilanjutkan!", 5, "play")
+        SetStatus("♻️ Auto-resume dari config tersimpan...")
+        task.spawn(TruckFarm)
     end
 end)
 
-print("[CDID JawaTimur Rayfield] Loaded v" .. CONFIG.Version)
+print(string.format("[CDID Rayfield] Loaded v%s | CycleDelay=%.1f | TwnSpeed=%.1f",
+    CFG.Version, CFG.CycleDelay, CFG.TweenSpeed))
